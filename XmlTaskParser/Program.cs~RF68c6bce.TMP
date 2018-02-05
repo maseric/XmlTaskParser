@@ -1,0 +1,105 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml.Linq;
+
+namespace XmlTaskParser
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+
+            if (args.Count() != 1)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine("Usage : XmlTaskParser file");
+                Console.WriteLine("  file : fichier Xml à parser. Issu du plannificateur de tâches Windows > exporter");
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            else
+            {
+
+                Console.WriteLine("@@@ DEBUT");
+
+                try
+                {
+                    if (!System.IO.File.Exists(args[0]))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Fichier non trouvé : " + args[0]);
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    else
+                    {
+
+                        Console.WriteLine(" Lecture du fichier " + args[0]);
+                        XElement task = XElement.Load(args[0]);
+
+                        if (task.Name.LocalName == "Task") // le fichier XML est bien une balise Task
+                        {
+
+                            TaskInfo taskInfo = new TaskInfo();
+
+                            Console.WriteLine("version tâche planifiée : " + task.Attribute("version").Value);
+
+                            // on récupère le xmlns pour rechercher dans le fichier XML (merci Linq...)
+                            XNamespace ns = task.GetDefaultNamespace();
+
+                            IEnumerable<string> auteur = from registrationInfo in task.Elements(ns + "RegistrationInfo")
+                                         let author = (string)registrationInfo.Element(ns + "Auhtor").Value
+                                         select author;
+
+                            foreach (string auth in auteur)
+                            {
+                                Console.WriteLine(auteur);
+
+                            }
+
+
+
+                            // récupère les éléments fils de la balise task
+                            IEnumerable<XElement> tags = task.Elements();
+
+                            foreach (var tag in tags)
+                            {
+                                Console.WriteLine("  parcours du tag : " + tag.Name.LocalName);
+                                String searchedTag = "Author";
+                                XName tagName = ns + searchedTag;
+                                XElement trig = tag.Element(tagName);
+                                if (object.ReferenceEquals(trig, null))
+                                {
+                                    Console.WriteLine("     " + searchedTag + " non trouvé");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("     " + searchedTag + " trouvé !!!");
+                                }
+
+                            }
+
+
+                        }
+                        else
+                        {
+                            // si pas tag "Task" => le fichier XML n'est pas bon
+                            Console.WriteLine("Erreur : pas de balise 'Task' trouvée. Abandon.");
+                        }
+
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine("Erreur : " + ex.Message);
+                }
+
+                Console.WriteLine("@@@ FIN");
+                // Console.ReadLine();
+
+            }
+
+        }
+    }
+}

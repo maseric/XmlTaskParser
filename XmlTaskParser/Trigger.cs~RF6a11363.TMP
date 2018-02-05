@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace XmlTaskParser
+{
+    class Trigger
+    {
+        public static enum typePlanif { jours = 1, semaine = 2 };
+        public int daysInterval { get; set; }
+        public int weeksInterval { get; set; }
+        public System.DateTime startHour{get; set;}
+        public int ExecutionTimeLimit { get; set; }
+        public string[] daysOfWeek=new string[7];
+        public typePlanif planif{get; set;};
+
+
+
+    }
+}

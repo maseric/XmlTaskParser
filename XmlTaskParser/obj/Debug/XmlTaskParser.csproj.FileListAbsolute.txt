@@ -1,0 +1,6 @@
+C:\Users\e.mas1\documents\visual studio 2013\Projects\XmlTaskParser\XmlTaskParser\bin\Debug\XmlTaskParser.exe
+C:\Users\e.mas1\documents\visual studio 2013\Projects\XmlTaskParser\XmlTaskParser\bin\Debug\XmlTaskParser.pdb
+C:\Users\e.mas1\documents\visual studio 2013\Projects\XmlTaskParser\XmlTaskParser\obj\Debug\XmlTaskParser.exe
+C:\Users\e.mas1\documents\visual studio 2013\Projects\XmlTaskParser\XmlTaskParser\obj\Debug\XmlTaskParser.pdb
+C:\Users\e.mas1\Documents\Visual Studio 2013\Projects\XmlTaskParser\XmlTaskParser\obj\Debug\XmlTaskParser.csprojResolveAssemblyReference.cache
+C:\Users\e.mas1\documents\visual studio 2013\Projects\XmlTaskParser\XmlTaskParser\bin\Debug\XmlTaskParser.exe.config

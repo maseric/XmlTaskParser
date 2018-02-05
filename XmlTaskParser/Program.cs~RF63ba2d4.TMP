@@ -1,0 +1,67 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml.Linq;
+
+namespace XmlTaskParser
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+
+            if (args.Count() != 1)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine("Usage : XmlTaskParser file");
+                Console.WriteLine("  file : fichier Xml à parser. Issu du plannificateur de tâches Windows > exporter");
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            else
+            {
+
+                Console.WriteLine("@@@ DEBUT");
+
+                try
+                {
+                    if (!System.IO.File.Exists(args[0]))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Fichier non trouvé : " + args[0]);
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    else
+                    {
+
+
+                        XElement root = XElement.Load(args[0]);
+                        Console.WriteLine(" Lecture du fichier " + args[0]);
+                        Console.WriteLine("version tâche planifiée : "+root.Attribute("version").Value);
+                        
+                        IEnumerable<XElement> tags=root.Elements();
+
+                        foreach(var tag in tags)
+                        {
+                            Console.WriteLine(tag.Element("Triggers").Value);
+                        }
+
+
+
+
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine("Erreur : " + ex.Message);
+                }
+
+                Console.WriteLine("@@@ FIN");
+                // Console.ReadLine();
+
+            }
+
+        }
+    }
+}

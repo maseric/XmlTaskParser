@@ -1,0 +1,277 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
+
+namespace XmlTaskParser
+{
+    /// <summary>
+    ///  programme pricipal
+    /// </summary>
+    class Program
+    {
+
+        private static int LOGPADDLEVEL = 0;
+        static void Main(string[] args)
+        {
+       
+
+            if (args.Count() != 2)
+            {
+                usage();
+            }
+            else
+            {
+
+                string option = args[0];
+                if(option.Equals("-f",StringComparison.InvariantCultureIgnoreCase))
+                { 
+                     // option file            
+                    
+                    log("@@@ DEBUT - mode file");
+                    
+                    // TODO : ajouter le serveur en paramètre ?
+                    parseFile(args[1],"serveur");
+                    
+                    LOGPADDLEVEL = 0;
+                    log("@@@ FIN");
+                    // Console.ReadLine();
+
+                }
+                else if (option.Equals("-p", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // option path
+                    log("@@@ DEBUT - mode path");
+
+                    LOGPADDLEVEL++;
+                    // parcours récursif du répertoir parent
+                    try
+                    {
+                        foreach (string xmlFile in System.IO.Directory.GetFiles(args[1], "*.xml", System.IO.SearchOption.AllDirectories))
+                        {
+                            log("@@@ Parsing file "+xmlFile);
+                            parseFile(xmlFile,"coincoin");
+
+                        }
+                        LOGPADDLEVEL--;
+                    }
+                    catch (Exception ex)
+                    {
+                        err(ex.Message);
+                    }
+                    // TODO : parser recursivement
+
+                    LOGPADDLEVEL = 0;
+                    log("@@@ FIN");
+                }
+                else
+                {
+                    usage();
+                    return;
+                }
+
+                
+
+            }
+
+        }
+
+        ///<summary>
+        /// Méthode permettant de tester si l'élément à affecter est nul
+        ///</summary>
+        ///
+        private static string setSafeStr(XElement el)
+        {
+            string ret = "not found";
+            if (object.ReferenceEquals(el, null))
+            {
+                log("not found");
+            }
+            else
+            {
+                log("setting " + el.Name.LocalName + " to " + el.Value);
+                ret = el.Value;
+            }
+            return ret;
+        }
+
+        /*
+         * TODO : ça sert à qqchose le truc ci-dessous ?
+        private static int setSafeInt(XElement el)
+        {
+            int ret = 0;
+            if (object.ReferenceEquals(el, null))
+            {
+                log("not found");
+            }
+            else
+            {
+                // TODO : gérer exception si chaine par au format nombre
+                ret = int.Parse(el.Value);
+                log("setting " + el.Name.LocalName + " to " + ret);
+                
+                
+            }
+            return ret;
+        }
+        */
+
+        /// <summary>
+        /// Fonction générique de log avec indentation
+        /// </summary>
+        /// <param name="message"></param>
+        private static void log(string message)
+        {
+            String spaces = "";
+            for(int i=0;i<LOGPADDLEVEL;i++)
+            {
+                spaces += "  ";
+            }
+
+            Console.WriteLine(DateTime.Now.ToString("yyyyMMdd HH:mm:ss.ff") + " - "+ spaces + message);
+        }
+
+        /// <summary>
+        /// Fonction générique de log d'erreur
+        /// </summary>
+        /// <param name="message"></param>
+        private static void err(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;            
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("Erreur : " + message);
+        }
+
+        private static void usage()
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Usage : XmlTaskParser [OPTION]");
+            Console.WriteLine("Analyse les fichiers XML issus du plannificateur de taches Windows > exporter");
+            Console.WriteLine("  OPTION :");
+            Console.WriteLine("    -p path, explorer recursivement path pour y trouver des fichiers XML a parser");
+            Console.WriteLine("    -f file, file : fichier XML à parser");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        private static void parseFile(string file,string serveur)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(file))
+                {
+                    err("Fichier non trouve : " + file);
+                }
+                else
+                {
+                    LOGPADDLEVEL++;
+
+                    //  Console.WriteLine(" Lecture du fichier " + args[0]);
+                    log("Lecture du fichier " + file);
+
+
+
+                    XElement task = XElement.Load(file);
+
+                    if (task.Name.LocalName == "Task") // le fichier XML est bien une balise Task
+                    {
+                        LOGPADDLEVEL++;
+
+
+
+
+                        TaskInfo taskInfo = new TaskInfo(serveur, System.IO.Path.GetFileNameWithoutExtension(file));
+
+                        taskInfo.Version = task.Attribute("version").Value;
+
+
+                        // on récupère le xmlns pour rechercher dans le fichier XML (merci Linq...)
+                        XNamespace ns = task.GetDefaultNamespace();
+
+                        // récupère les éléments fils de la balise task
+                        IEnumerable<XElement> tags = task.Elements();
+
+                        foreach (var tag in tags)
+                        {
+                            //----------------------------------------------------------------------------------------
+                            // RegistrationInfo
+                            if (tag.Name.LocalName == "RegistrationInfo")
+                            {
+                                LOGPADDLEVEL++;
+                                //"Author"                                    
+                                taskInfo.Auteur = setSafeStr(tag.Element(ns + "Author"));
+
+                                //"Description"                                    
+                                taskInfo.Description = setSafeStr(tag.Element(ns + "Description"));
+                                LOGPADDLEVEL--;
+                            }
+
+                            //----------------------------------------------------------------------------------------
+                            // Triggers
+                            if (tag.Name.LocalName == "Triggers")
+                            {
+                                LOGPADDLEVEL++;
+
+                                // CalendarTrigger + flitre Enabled = true (Planification calendaire active)
+                                var triggers = from trig in tag.Elements(ns + "CalendarTrigger")
+                                               where trig.Element(ns + "Enabled").Value == "true"
+                                               select trig;
+                                /*
+                                foreach(XElement xele in triggers)
+                                {
+                                    log(xele.ToString());
+                                }
+                                */
+                                //IEnumerable<XElement> triggers=tag.Elements(ns + "CalendarTrigger");
+                                taskInfo.nbTriggers = triggers.Count();
+                                log("nb declencheurs actifs : " + taskInfo.nbTriggers);
+                                LOGPADDLEVEL--;
+                            }
+
+
+                            //----------------------------------------------------------------------------------------
+                            // Actions
+                            if (tag.Name.LocalName == "Actions")
+                            {
+                                LOGPADDLEVEL++;
+
+                                // Exec
+                                var execs = from exec in tag.Elements(ns + "Exec")
+                                            //where trig.Element(ns + "Enabled").Value == "true"
+                                            select exec;
+                                /*
+                                foreach(XElement xele in triggers)
+                                {
+                                    log(xele.ToString());
+                                }
+                                */
+                                //IEnumerable<XElement> triggers=tag.Elements(ns + "CalendarTrigger");
+                                taskInfo.nbActions = execs.Count();
+                                log("nb actions : " + taskInfo.nbActions);
+                                LOGPADDLEVEL--;
+                            }
+
+
+
+
+                        }
+
+                        log(taskInfo.ToString());
+                    }
+                    else
+                    {
+                        // si pas tag "Task" => le fichier XML n'est pas bon
+                        log("Erreur : pas de balise 'Task' trouvee. Abandon.");
+                    }
+                    LOGPADDLEVEL--;
+
+                }
+                LOGPADDLEVEL--;
+            }
+            catch (Exception ex)
+            {
+                err(ex.Message);
+            }
+
+        }
+    }
+}
